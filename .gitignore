@@ -3,6 +3,7 @@
 
 ### Datasets ###
 data/*
+kaggle.json
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
