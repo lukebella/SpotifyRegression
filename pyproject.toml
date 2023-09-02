@@ -21,6 +21,7 @@ dependencies = [
   "pandas",
   "numpy",
   "scikit-learn",
+  "matplotlib",
   "kaggle",
 ]
 
