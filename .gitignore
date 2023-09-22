@@ -5,6 +5,8 @@
 data/*
 kaggle.json
 *.png
+!/report/images/*.png
+
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
 # website: http://jupyter.org/
