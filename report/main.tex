@@ -36,7 +36,7 @@ K-Fold Nested Cross Validation splits the dataset in $K$ parts and computes the 
 For experimental purpose, we have implemented an additional part: the kernel trick. This allows us to deal with higher dimensional space data, without the explicit necessity of calculating it. In fact, this process would be computationally expensive for higher-dimensional spaces.\newline
     
 The aim of this project is to analyze these different techniques in order to predict the popularity of tracks, with the purpose of determining which models and hyperparameters fit better. 
-
+     
     
 % \subsection{Declaration}
 % \textit{We declare that this material, which we now submit for assessment, is entirely our own work and has not been taken from the work of others, save and to the extent that such work has been cited and acknowledged within the text of our work. We understand that plagiarism, collusion, and copying are grave and serious offences in the university and accept the penalties that would be imposed should I engage in plagiarism, collusion or copying. This assignment, or any part of it, has not been previously submitted by us or any other person for assessment on this or any other course of study.}
@@ -78,7 +78,7 @@ The solution implemented for this particular problem is managed as follows:
 	\item group by \texttt{track\_id} and aggregate the one-hot encoded features into a single line;
 	\item create a temporary \texttt{DataFrame} with all the features, except for the ''non functional features'' (cited in subsection \ref{subsec:feature_descr}) and \texttt{track\_genre};
 	\item merge the temporary \texttt{DataFrame} with the ''\texttt{track\_genre DataFrame}'' through inner-join, in order to achieve the final object used for the next operations.
-
+	              
 \end{enumerate}
 In general, if we have the same track with multiple genres, this will be saved as multiple lines at the beginning. This method aggregates these rows into a single one, simply by keeping $1$ in the \texttt{track\_genre} cells there were before. 
     
@@ -91,7 +91,7 @@ w_s = \argmin_{\boldsymbol{w} \in \mathbb{R}^d}\sum_{i = 1}^m(\boldsymbol{w}^\to
 \end{equation}
 where $m$ are the number of datapoints in a training set.
     
-In a matrix context, we have a closed-form expression for the predictor (the function that we are dealing with is convex, so his gradient can vanish to $0$):
+In a matrix context, we have a closed-form expression for the predictor (the function that we are dealing with is convex, so its gradient can vanish to $0$):
     
 \begin{equation}
 	\boldsymbol{w} = (S^\top S)^{-1}S^\top \boldsymbol{y}
@@ -153,7 +153,7 @@ The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the sta
 
 \section{K-Fold Nested Cross Validation}
 Cross-validation is a technique to provide a more accurate estimate of a model's performance and to prevent overfitting. This is done by testing an entire set of hyperparameters $\Theta_0 \subset \Theta$, where $\Theta$ is the set of all possible hyperparameter values. The nested CV is an extension of traditional cross-validation and is particularly useful when you want to tune hyperparameters.
-The code partitions the entire dataset $S$ in $K$ parts or folds, denoted by $i = 1,\dots,K$. It is executed on each training part $S_{-i}$ and the algorithm computes the loss of the correspondent predictor on the test set $S_i$. The estimate is calculated by splitting further the training data in two subsets, $S_{train}$ and $S_{dev}$. The development set $S_{dev}$ (also called validation set) is used as a surrogate test set. The algorithm is run on $S_{train}$ once for each value of the hyperparameter in $\Theta_0$. The resulting predictors are tested on the $S_{dev}$ set. In order to obtain the final predictor, the learning algorithm is run once more on the original training set $S_{-i}$ using the value of the $\theta$ corresponding to the predictor with smallest error on the validation set. In the end, the cross validation estimate is calculated by averaging the test errors of the predictors \cite{profcv}. \newline
+The code partitions the entire dataset $S$ in $K$ parts or folds, denoted by $i = 1,\dots,K$. The algorithm computes the loss of the correspondent predictor on the test set $S_i$ and it is executed on each training part $S_{-i} = S \setminus S_{i}$. The estimate is calculated by splitting further the training data in two subsets, $S_{train}$ and $S_{dev}$. The development set $S_{dev}$ (also called validation set) is used as a surrogate test set. The algorithm is run on $S_{train}$ once for each value of the hyperparameter in $\Theta_0$. The resulting predictors are tested on the $S_{dev}$ set. In order to obtain the final predictor, the learning algorithm is run once more on the original training set $S_{-i}$ using the value of the $\theta$ corresponding to the predictor with smallest error on the validation set. In the end, the cross validation estimate is calculated by averaging the test errors of the predictors \cite{profcv}. \newline
 
 \subsection{Implementation}
 The Nested CV method picks as input the list of the hyperparameters $alphas$, the $K$ number of folds and the dataset $S$. As mentioned above, the data are subdivided into a test set $S_{test}$ and a training set $S_{train} = S \setminus S_{test}$ for each iteration $i = 1, \dots, K$. In the nested part, we cut up $S_{train}$ in $CV_{train}$ and $CV_{dev}$ (validation set). Then, for each $alpha \in alphas$, we predict $\boldsymbol{w}$ through ridge regression. We take into account the $alpha$ that has generated the minor loss in the estimate. At the end of the external loop, a last prediction is made by taking up the entire training set and tested with $S_{test}$.
@@ -173,7 +173,7 @@ The hyperparameter tuning provides an $\alpha$ equal to $5.36$, with a resulting
 %what is it
 The kernel trick facilitates the feature expansion without effectively transform data. This procedure makes us avoid an exponential computational cost of $N = \Theta(d^n)$, where $d$ is the number of features and $n$ is the number of dimensions we want to reach. In general, a kernel can be defined in this way: consider a function $\boldsymbol{\phi}: \mathbb{R}^d \rightarrow \mathcal{H}$ that maps data points on an higher feature dimensional space $\mathcal{H}$ and a general linear predictor learned through the Perceptron: \begin{equation}
 h(x) = sgn\left(\sum_{s \in S}y_s\boldsymbol{x_s^\top}\boldsymbol{x}\right)
-\end{equation} where $S$ is the set of indices of training examples $(x_s,y_s)$ on which the Perceptron made an update. In the space $\mathbb{R}^N$, the classifier becomes: \begin{equation}
+\end{equation} where $S$ is the set of indices of training examples $(\boldsymbol{x}_s,\boldsymbol{y}_s)$ on which the Perceptron made an update. In the space $\mathbb{R}^N \equiv \mathcal{H}$, the classifier becomes: \begin{equation}
 h{_\phi}(x) = sgn\left(\sum_{s \in S}y_s\boldsymbol{\phi(x_s)^\top}\boldsymbol{\phi(x)}\right).
 \end{equation}
     
@@ -182,12 +182,12 @@ The faster way to enhance the calculation speed of $\boldsymbol{\phi(x_s)^\top}\
 
 Some kernel functions are:
 \begin{itemize}
-	\item Linear Kernel: $K(\boldsymbol{x},\boldsymbol{x^\prime}) = \boldsymbol{x}^\top\boldsymbol{x^\prime}\hfill
-        \stepcounter{equation}\ (\theequation)$
-	\item Polynomial Kernel: $K(\boldsymbol{x},\boldsymbol{x^\prime}) = (1 + \boldsymbol{x}^\top\boldsymbol{x^\prime})^n\hfill \stepcounter{equation}\ (\theequation)$
+	\item Linear Kernel: $K_1(\boldsymbol{x},\boldsymbol{x^\prime}) = \boldsymbol{x}^\top\boldsymbol{x^\prime}\hfill
+	      \stepcounter{equation}\ (\theequation)$
+	\item Polynomial Kernel: $K_2(\boldsymbol{x},\boldsymbol{x^\prime}) = (1 + \boldsymbol{x}^\top\boldsymbol{x^\prime})^n\hfill \stepcounter{equation}\ (\theequation)$
 	\item Gaussian Kernel: 
-        $K(\boldsymbol{x},\boldsymbol{x^\prime}) = exp \left(-\frac{1}{2\gamma}\norm{\boldsymbol{x}-\boldsymbol{x^\prime}}^2 \right)\hfill
-        \stepcounter{equation}\ (\theequation)$
+	      $K_3(\boldsymbol{x},\boldsymbol{x^\prime}) = exp \left(-\frac{1}{2\gamma}\norm{\boldsymbol{x}-\boldsymbol{x^\prime}}^2 \right)\hfill
+	      \stepcounter{equation}\ (\theequation)$
 \end{itemize}
 To ''kernelize'' the ridge regression predictor $\boldsymbol{w} = (\alpha I + S^\top S)^{-1}S^\top \boldsymbol{y}$, we can represent it in a generic Reproducing Kernel Hilbert Space (RKHS) \cite{rhks}: 
 \begin{equation}
@@ -206,12 +206,12 @@ For experimental purpose, we have tested two possible researches for the hyperpa
 The code part for the Kernel Ridge Regression is made up of four functions:
 \begin{itemize}
 	\item \texttt{gaussian\_kernel}: this function takes the hyperparameter $\gamma$ and the two vectors for calculating the formula of the Gaussian Kernel (9);
-
+	              
 	\item \texttt{kernel\_ridge\_regression}: it considers as input the dataset and the hyperparameters $\alpha$ and $\gamma$. 
-        The vector $\boldsymbol{y}$ is extracted from the dataset \eqref{KRR} by taking the \texttt{popularity} column. Then, an iteration will be made in order to take the entries and calculate the matrix $\boldsymbol{K}$ \eqref{KRR}. 
-        It's observable that $\boldsymbol{K}(x_i, x_j) = \boldsymbol{K}(x_j, x_i)$ with $ i,j = 1, \dots, m$ for the square norm in the Gaussian Kernel formula (9). Hence, to halve the computation, we have calculated only the triangle above the matrix diagonal and summed it to its transpose part. Finally, we have summed the matrix $\boldsymbol{K}$ with the identity matrix scaled by $\alpha$, then we have inverted and multiplied it by the vector $\boldsymbol{y}$.
+	      The vector $\boldsymbol{y}$ is extracted from the dataset \eqref{KRR} by taking the \texttt{popularity} column. Then, an iteration will be made in order to take the entries and calculate the matrix $\boldsymbol{K}$ \eqref{KRR}. 
+	      It's observable that $\boldsymbol{K}(x_i, x_j) = \boldsymbol{K}(x_j, x_i)$ with $ i,j = 1, \dots, m$ for the square norm in the Gaussian Kernel formula (9). Hence, to halve the computation, we have calculated only the triangle above the matrix diagonal and summed it to its transpose part. Finally, we have summed the matrix $\boldsymbol{K}$ with the identity matrix scaled by $\alpha$, then we have inverted and multiplied it by the vector $\boldsymbol{y}$.
 	\item \texttt{kernel\_predict}:
-        in this method we take the vector $\boldsymbol{x}$ and, examining all the training points, we determining $\boldsymbol{k}(\boldsymbol{x})$ \eqref{KRR}. In the end we obtain the estimate by factorize the \texttt{kernel\_ridge\_regression} output with $\boldsymbol{k}(\boldsymbol{x})$. 
+	      in this method we take the vector $\boldsymbol{x}$ and, examining all the training points, we determining $\boldsymbol{k}(\boldsymbol{x})$ \eqref{KRR}. In the end we obtain the estimate by factorize the \texttt{kernel\_ridge\_regression} output with $\boldsymbol{k}(\boldsymbol{x})$. 
 	\item \texttt{kernel\_avg\_square\_loss}: the process of this functionality is predicting the estimate on the test set values and then calculating the MSE \eqref{MSE}.  
 \end{itemize}
 
@@ -271,7 +271,7 @@ The results show a sensible decrease when all the features have been considered 
 			\includegraphics[scale= 0.53]{images/finalCV.png}
 		\end{center}
 	\end{adjustwidth}
-	\caption{The histogram shows the MSEs comparison between the ridge regression model developed from scratch and \texttt{scikit-learn} ridge regressor considering all dataset features.}
+	\caption{The histogram shows the MSEs comparison between the ridge regression model developed from scratch and \texttt{scikit-learn} ridge regressor considering all dataset features and all the datapoints.}
 	\label{CVscrsk}
 \end{figure}
 %avg norm vs cv
