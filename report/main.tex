@@ -27,7 +27,7 @@
 	In this paper we develop a prediction system that estimates the popularity of a song. The flow of this work starts with the manipulation of the dataset: ''Spotify Track Dataset''. The training and estimation parts, together with k-fold nested cross validation and kernel functions, are developed from scratch and compared with the \texttt{scikit-learn} operations. 
 \end{abstract}
     
-    
+
 \section{Introduction}
 Ridge Regression is a linear prediction where vectors of real coefficients are approximated by an hyperparameter called ''regularizer''. This choice is especially useful in a situation in which the training set is perturbed, thus achieving a more stable predictor for reducing the variance of the risk. \newline
 In order to get the best hyperparameter $\alpha$, the k-fold nested cross validation process is built.
@@ -38,15 +38,11 @@ For experimental purpose, we have implemented an additional part: the kernel tri
 The aim of this project is to analyze these different techniques in order to predict the popularity of tracks, with the purpose of determining which models and hyperparameters fit better. 
      
     
-% \subsection{Declaration}
-% \textit{We declare that this material, which we now submit for assessment, is entirely our own work and has not been taken from the work of others, save and to the extent that such work has been cited and acknowledged within the text of our work. We understand that plagiarism, collusion, and copying are grave and serious offences in the university and accept the penalties that would be imposed should I engage in plagiarism, collusion or copying. This assignment, or any part of it, has not been previously submitted by us or any other person for assessment on this or any other course of study.}
-
 \section{Dataset}
 ''Spotify Track Dataset'' is a CSV dataset of Spotify tracks over a range of 125 different genres. The data was collected and cleaned using Spotify's Web API and Python. Each track has some audio features associated with it, both numerical and categorical, with a total number of 21 features that describe exactly 114000 datapoints \cite{datasetKaggle}. 
 
 \subsection{Feature Description}
 \label{subsec:feature_descr}
-%IMPORTANT: write the part in which we group by track genre...
 The attributes of the dataset represent the inertial aspects of the tracks: most of the numerical features, like \texttt{instrumentalness}, \texttt{liveness} or \texttt{speechiness}, detect the presence of the characteristics they specify, indicating the probability of how much the phenomenon occurs. 
 %some of the data we have discarted
 The categorical metadata show for the majority nominal characteristics: in fact, \texttt{track\_id}, \texttt{artists}, \texttt{album\_name}, \texttt{track\_name} labels are not functional and discarded from the \texttt{DataFrame} for discovering the popularity of a track. Features such as \texttt{key}, \texttt{mode} and \texttt{time\_signature} are represented as numbers but they can be considered as categorical, since are labels mapped to integer values.  
@@ -62,13 +58,10 @@ NumPy and Pandas libraries are imported for  their data structure and functions 
     
 Next, the data are divided randomly into two sets, training (70\%) and test (30\%).
 %some of the numerical data are treated like categorical
-The project focuses on training both numerical and all features, so we have momentarily dropped the categorical metadata for the first part and, as already mentioned in the section above, \texttt{key}, \texttt{mode} and \texttt{time\_signature} too.
-%normalization
-    
-A \texttt{min-max} normalization procedure is applied for \texttt{loudness} and \texttt{tempo}, because they are the only features that are not comprised in the range 0-1.\newline
-\subsection{One-Hot Encoding}
-In order to compute the ridge regression on all the columns, it has been performed the \texttt{One-Hot Encoding} approach: this simply converts the categorical data into binary ones. For each non-numerical data point, a binary vector is created of length equal to the number of unique categories in the variable. Each vector has a 1 in the position corresponding to the category label and 0s in all other positions. This 1 indicates the presence of that category for that particular data point. The result of this process expands the number of attributes up to 146, but since that the \texttt{explicit} column is binary, we keep only the true one, thus it will be considered $1$ as explicit and $0$ not.
-    
+The project focuses on training both numerical and all features, so we have momentarily dropped the categorical metadata for the first part and, as already mentioned in the section above, \texttt{key}, \texttt{mode} and \texttt{time\_signature} too. 
+For a more accurate analysis, we have randomized the row positions in three distinct modes, this simply by using different seed generations. In this way we can view how much variance occurs in the estimations.
+
+
 \subsection{Manage a unique track with multiple genres}
 \label{subsec:track_genre}
 One noticeable thing that shows up in the information set is that there are more rows with the same \texttt{track\_id} (this can be seen as a primary key) that perfectly match except for their \texttt{track\_genre} attribute. 
@@ -83,7 +76,11 @@ The solution implemented for this particular problem is managed as follows:
 In general, if we have the same track with multiple genres, this will be saved as multiple lines at the beginning. This method aggregates these rows into a single one, simply by keeping $1$ in the \texttt{track\_genre} cells there were before. 
     
 In this manner, we have decreased the amount of datapoints down to 89740.
-    
+
+\subsection{Normalization Range and One-Hot Encoding}
+A \texttt{min-max} normalization procedure is applied for \texttt{loudness}, \texttt{tempo} and  \texttt{duration\_ms}, because they are the only features that are not comprised in the range 0-1.\newline
+In order to compute the ridge regression on all the columns, it has been performed the \texttt{One-Hot Encoding} approach: this simply converts the categorical data into binary ones. For each non-numerical data point, a binary vector is created of length equal to the number of unique categories in the variable. Each vector has a 1 in the position corresponding to the category label and 0s in all other positions. This 1 indicates the presence of that category for that particular datapoint. The result of this process expands the number of attributes up to 146, but since that the \texttt{explicit} column is binary, we keep only the true one, thus it will be considered $1$ as explicit and $0$ not. 
+In the end, an additional normalization has been utilized: we achieved a $[0,100]$ interval on all features aimed at taking the same range of \texttt{popularity.}
 
 \section{Ridge Regression}
 Linear regression is an approach in which predictors are linear functions $h: \mathbb{R}^d \rightarrow \mathbb{R}$, each parameterized by a vector $\boldsymbol{w} \in \mathbb{R}$ of real coefficients: $h(\boldsymbol{x}) = \boldsymbol{w}^\top\boldsymbol{x}$. Hence, the ERM with respect to the square loss is: \begin{equation}
@@ -100,12 +97,13 @@ where
 \begin{itemize}
 	\item $S$ is a $m \times d$ design matrix ($m$ is the number of training points and $d$ is the number of features);
 	\item $S^\top S$ should be nonsingular, which means that one or more of its rows/columns are not definable as a linear combination of all or some other of its rows/columns;
-	\item $\boldsymbol{y} = (y_1, \dots , y_m)$.
+	\item $\boldsymbol{y} = (y_1, \dots , y_m)$, the label vector of the training set.
 \end{itemize}
     
 However, when $S^\top S$ is nearly singular, the variance error could grow. In order to enhance the predictor, a regularizer $\alpha > 0$ is added for increasing the stability \cite{profrr}:
 
 \begin{equation}
+\label{rr}
 	\boldsymbol{w} = (\alpha I + S^\top S)^{-1}S^\top \boldsymbol{y}
 \end{equation}
 
@@ -122,11 +120,13 @@ where, in our case, $\hat{y}_i= \boldsymbol{w}^\top \boldsymbol{x}_i$, $\boldsym
     
 %risultati
 \subsection{Results}
+From now on, the results written in this report refer to the seed generation with number $0$.
 %numerical vs all (also scikit-learn, in a objective way)
 %which MSE gives
 %plots
 \subsubsection{Numerical features}
-The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the standard linear regression) only on numerical features is $414.79$. The training and test set are manipulated as written in the subsection \ref{subsec:dataman}. In the figure \ref{rrmsenun} we have considered a set of values of $\alpha$ with its resulting square losses in the ridge regression fashion. The first plot figures the ridge prediction developed from scratch, which is compared with the second plot that represents the ridge regression model of \texttt{scikit-learn}: \texttt{sklearn.linear\_model.Ridge}. 
+
+The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the standard linear regression) only on numerical features is $414.79$ with a variance of $15.86$, whereas the \texttt{scikit-learn} Ridge predictor gives a MSE of $408.01$ with a variance of $14.20$. The training and test set are manipulated as written in the subsection \ref{subsec:dataman}. In the figure \ref{rrmsenun} we have considered a set of values of $\alpha$ with its resulting square losses in the ridge regression fashion. The first plot figures the ridge prediction developed from scratch, which is compared with the second plot that represents the ridge regression model of \texttt{scikit-learn}: \texttt{sklearn.linear\_model.Ridge}. 
 
     
 \begin{figure}[H]
@@ -140,7 +140,7 @@ The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the sta
 \end{figure}
     
 \subsubsection{All features}
-The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the standard linear regression) on all the features is $273.34$. The training and test set are manipulated as written in the subsection \ref{subsec:dataman}. In the figure \ref{rrmseall} we have considered a set of values of $\alpha$ with its resulting square losses in the ridge regression fashion. The first plot figures the ridge prediction developed from scratch, which is compared with the second plot that represents the ridge regression model of \texttt{scikit-learn}: \texttt{sklearn.linear\_model.Ridge}.
+The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the standard linear regression) on all the features is $273.34$, with a variance of $31.91$, whereas the \texttt{scikit-learn} Ridge predictor gives a MSE of $273.33$ with a variance of $20.36$. The training and test set are manipulated as written in the subsection \ref{subsec:dataman}. In the figure \ref{rrmseall} we have considered a set of values of $\alpha$ with its resulting square losses in the ridge regression fashion. The first plot figures the ridge prediction developed from scratch, which is compared with the second plot that represents the ridge regression model of \texttt{scikit-learn}: \texttt{sklearn.linear\_model.Ridge}.
 \begin{figure}[H]
 	\begin{adjustwidth}{0 cm}{}
 		\begin{center}
@@ -156,7 +156,7 @@ Cross-validation is a technique to provide a more accurate estimate of a model's
 The code partitions the entire dataset $S$ in $K$ parts or folds, denoted by $i = 1,\dots,K$. The algorithm computes the loss of the correspondent predictor on the test set $S_i$ and it is executed on each training part $S_{-i} = S \setminus S_{i}$. The estimate is calculated by splitting further the training data in two subsets, $S_{train}$ and $S_{dev}$. The development set $S_{dev}$ (also called validation set) is used as a surrogate test set. The algorithm is run on $S_{train}$ once for each value of the hyperparameter in $\Theta_0$. The resulting predictors are tested on the $S_{dev}$ set. In order to obtain the final predictor, the learning algorithm is run once more on the original training set $S_{-i}$ using the value of the $\theta$ corresponding to the predictor with smallest error on the validation set. In the end, the cross validation estimate is calculated by averaging the test errors of the predictors \cite{profcv}. \newline
 
 \subsection{Implementation}
-The Nested CV method picks as input the list of the hyperparameters $alphas$, the $K$ number of folds and the dataset $S$. As mentioned above, the data are subdivided into a test set $S_{test}$ and a training set $S_{train} = S \setminus S_{test}$ for each iteration $i = 1, \dots, K$. In the nested part, we cut up $S_{train}$ in $CV_{train}$ and $CV_{dev}$ (validation set). Then, for each $alpha \in alphas$, we predict $\boldsymbol{w}$ through ridge regression. We take into account the $alpha$ that has generated the minor loss in the estimate. At the end of the external loop, a last prediction is made by taking up the entire training set and tested with $S_{test}$.
+The Nested CV method picks as input the list of the hyperparameters $alphas$, the $K$ number of folds and the dataset $S$. As mentioned above, the data are subdivided into a test set $S_{test}$ and a training set $S_{train} = S \setminus S_{test}$ for each iteration $i = 1, \dots, K$. In the nested part, we cut up $S_{train}$ in $CV_{train}$ and $CV_{dev}$ (validation set). Then, for each $alpha \in alphas$, we predict $\boldsymbol{w}$ through ridge regression \eqref{rr}. We take into account the $alpha$ that has generated the minor loss in the estimate. At the end of the external loop, a last prediction is made by taking up the entire training set and tested with $S_{test}$.
 Finally, after have examined all the folds, the average of the $K$ losses is calculated and returned by the method, together with the hyperparameter $alpha$ and the best predictor $\boldsymbol{w}$. 
 %what is it
 %formule
@@ -164,7 +164,7 @@ Finally, after have examined all the folds, the average of the $K$ losses is cal
 %implementazione
 %risultati
 \subsection{Results}
-The hyperparameter tuning provides an $\alpha$ equal to $5.36$, with a resulting MSE \eqref{MSE} of $275.39$. The classifier \texttt{sklearn.linear\_model.RidgeCV} delivers a MSE value of $273.35$.
+The hyperparameter tuning provides an $\alpha$ equal to $53613$, with a resulting MSE \eqref{MSE} of $275.39$. The classifier \texttt{sklearn.linear\_model.RidgeCV} delivers a MSE value of $273.35$. As shown in figure \ref{rrmseall}, the choice of $\alpha$ does not significantly affect the rate of the MSE (9) until the order of magnitude of about $10^6$.
 %numerical vs all (also scikit-learn, in a objective way)
 %which MSE gives
 %plots
@@ -224,16 +224,22 @@ In this section we are focusing on the values $\alpha = 1$ and $\gamma$ that is 
 	\begin{tabular}{|l|l|}
 		\hline
 		Samples & Average Distance   \\ \hline
-		100     & 25646033841.577633 \\ \hline
-		500     & 14747945968.281841 \\ \hline
-		1000    & 14652219172.03803  \\ \hline
-		5000    & 16264607617.032509 \\ \hline
-		10000   & 21187343719.41936  \\ \hline
+		100     & $71913$ \\ \hline
+		500     & $68506$ \\ \hline
+		1000    & $68946$  \\ \hline
+		5000    & $68477$ \\ \hline
+		10000   & $68300$  \\ \hline
 	\end{tabular}
 \end{table}
 
-The test made on the numerical features gives an MSE (9) of $420.26$, practically the same as considering all the features. The \texttt{scikit-learn} predictor \texttt{KernelRidge} provides a test error of $430.47$, given \texttt{RBF} as kernel function. 
-    
+The test made on the numerical features gives an MSE (9) of $392.38$, with a variance of $14.57$, whereas considering all the features decreases the average loss to $281.30$ with a variance of $55.32$. The \texttt{scikit-learn} predictor \texttt{KernelRidge} provides a test error of $281.31$ with a variance of $55.57$, given \texttt{RBF} as kernel function \cite{rbf}. This kernel function differs from (9) because:
+
+\begin{equation}
+    K(\boldsymbol{x},\boldsymbol{x^\prime}) = exp \left(-\frac{1}{2\gamma^2}\norm{\boldsymbol{x}-\boldsymbol{x^\prime}}^2 \right)\hfill
+\end{equation}
+       
+The unique difference is that $\gamma$ is squared. In the test phase we have simply passed to the function the root squared average norm considered for the precedent tests.
+
 \subsection{Kernel Cross Validation}
 The hyperparameter tuning is now done on both $\gamma$ and $\alpha$. The procedure is almost the same: the only difference is that the prediction and the loss are made by the kernel functions (see section \ref{subsubsec:kernelfunc}). In order to estimate the two best hyperparameters, it has been implemented an outside loop from the nested cross validation that checks for each $\alpha$ its best $\gamma$ value. 
 \subsubsection{Results}
@@ -248,7 +254,7 @@ For this topic, the hyperpameters are chosen from a set of values generated at r
 	\label{hyptuningKRR}
 \end{figure}
     
-Once we have selected the best $\alpha$ and $\gamma$ values, we re-train the model with $7500$ datapoints and tested with $2500$. The MSE obtained is $420.98$. 
+Once we have selected the best $\alpha$ and $\gamma$ values, we re-train the model with $7500$ datapoints and tested with $2500$. The MSE obtained is $276.14$. 
 %formule
 %Gaussian Kernel
 %pregi
@@ -261,9 +267,8 @@ Once we have selected the best $\alpha$ and $\gamma$ values, we re-train the mod
 
 \section{Conclusion}
 %numerical vs all
-The results show a sensible decrease when all the features have been considered in respect of examining only the numerical ones in the ridge regression fashion. In the figures \ref{rrmsenun} and \ref{rrmseall} it has been compared the MSE (9) considering a wide range of the hyperparameter $\alpha$, using two different ridge regression predictors. Both of them depict almost the same loss in the first $\alpha$'s orders of magnitude: in fact, when we deal with nested cross validation, the results are approximately equal, as illustrated in the figure \ref{CVscrsk}. We have also noticed that, even for the kernel part, the best $\alpha$s are the ones between $10^0$ and $10^1$.   
+The results show a sensible decrease when all the features have been considered in respect of examining only the numerical ones in the ridge regression fashion. In the figures \ref{rrmsenun} and \ref{rrmseall} it has been compared the MSE (9) considering a wide range of the hyperparameter $\alpha$, using two different ridge regression predictors. Both of them depict almost the same loss in the first $\alpha$'s orders of magnitude: in fact, when we deal with nested cross validation, the results are approximately equal, as illustrated in the figure \ref{CVscrsk}.   
 
-%something wrong with the numeration figure
     
 \begin{figure}[H]
 	\begin{adjustwidth}{0 cm}{}
@@ -275,20 +280,21 @@ The results show a sensible decrease when all the features have been considered 
 	\label{CVscrsk}
 \end{figure}
 %avg norm vs cv
-The resultant values illustrated by the kernel computations in the figure \ref{KRRcomparison} reflect a worsening in terms of loss compared to the ridge prediction. This fault can be caused by the choice of taking into account the Gaussian Kernel: this function may lead to an unnecessary complexity into the model, even with a tuning on the hyperparameters. Instead, a linear kernel (7) has been attempted, decreasing the MSE down to $291.40$. 
+The resultant values illustrated by the kernel computations in the figure \ref{KRRcomparison} do not reflect neither a significant worsening nor an improvement in terms of loss compared to the standard linear ridge prediction. Thus, it should be identical choosing one of the two models in terms of yield. However, the ridge regression predictor takes less time to compute with respect to the kernel one. In addition, in the first one we consider all of the datapoints in the estimation, which is literally inconceivable for the kernel to process. One improvement of this work could be to take into account the kernel model considering the whole dataset, in order to verify whether or not this predictor might refine its estimations. 
+
 \begin{figure}[H]
 	\begin{adjustwidth}{0 cm}{}
 		\begin{center}
 			\includegraphics[scale= 0.53]{images/finalKernel.png}
 		\end{center}
 	\end{adjustwidth}
-	\caption{The histogram shows the MSEs comparison among the kernel developed from scratch (with the average square distance), the kernel with the hyperparameters achieved by cross validation and \texttt{scikit-learn} RBF kernel considering all dataset features.}
+	\caption{The histogram shows the MSEs comparison among the kernel developed from scratch (with the average square distance), the kernel with the hyperparameters achieved by cross validation and \texttt{scikit-learn} RBF kernel \cite{rbf} considering all dataset features.}
 	\label{KRRcomparison}
 \end{figure}
 
-The experiment with contemplating the average datapoint distance as the bandwith parameter of the Gaussian Kernel $\gamma$ (9) works. Indeed, as figured in the picture \ref{KRRcomparison}, its MSE value is reasonably equal to the one in which a nested cross validation is computed. This confirms what mentioned in the subsection \ref{kernelimpl}: a $\gamma$ close to the distance of the examined datapoints is an ideal rate for the predictor. 
+The experiment with contemplating the average datapoint distance as the bandwith parameter of the Gaussian Kernel $\gamma$ (9) works. Indeed, as figured in the picture \ref{KRRcomparison}, the order of magnitude of the MSE value is equal to the one in which a nested cross validation is computed. This confirms what mentioned in the subsection \ref{kernelimpl}: a $\gamma$ close to the distance of the examined datapoints is an ideal rate for the predictor. 
 
-\vfill
+\newpage
 
 \bibliographystyle{unsrt}
 \bibliography{biblio}
