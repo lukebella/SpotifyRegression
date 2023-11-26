@@ -29,10 +29,10 @@
     
 
 \section{Introduction}
-Ridge Regression is a linear prediction where vectors of real coefficients are approximated by an hyperparameter called ''regularizer''. This choice is especially useful in a situation in which the training set is perturbed, thus achieving a more stable predictor for reducing the variance of the risk. \newline
-In order to get the best hyperparameter $\alpha$, the k-fold nested cross validation process is built.
+Ridge Regression is a linear prediction in which an hyperparameter $\alpha$ is introduced. This choice is especially useful in a situation in which the training set is perturbed, thus achieving a more stable predictor for reducing the risk of overfitting. \newline
+In order to get the best hyperparameter $\alpha$, the k-fold nested cross validation process is built: this algorithm is completely explained in the section \ref{sec:kfold}.
 
-K-Fold Nested Cross Validation splits the dataset in $K$ parts and computes the estimate by dividing further the training data, iterates on the set of hyperparameters for each fold predictor and delivers in the end the average of their performance as output.  
+%K-Fold Nested Cross Validation splits the dataset in $K$ parts and computes the estimate by dividing further the training data: in this set it is computed another Cross Validation step, iterating on the set of hyperparameters for each nested fold predictor. This process outputs the hyperparameter that, in the prediction phase, gives the minimum average loss. 
 For experimental purpose, we have implemented an additional part: the kernel trick. This allows us to deal with higher dimensional space data, without the explicit necessity of calculating it. In fact, this process would be computationally expensive for higher-dimensional spaces.\newline
     
 The aim of this project is to analyze these different techniques in order to predict the popularity of tracks, with the purpose of determining which models and hyperparameters fit better. 
@@ -152,19 +152,20 @@ The MSE \eqref{MSE} calculated with the regularizer $\alpha$ set to $0$ (the sta
 \end{figure}
 
 \section{K-Fold Nested Cross Validation}
-Cross-validation is a technique to provide a more accurate estimate of a model's performance and to prevent overfitting. This is done by testing an entire set of hyperparameters $\Theta_0 \subset \Theta$, where $\Theta$ is the set of all possible hyperparameter values. The nested CV is an extension of traditional cross-validation and is particularly useful when you want to tune hyperparameters.
-The code partitions the entire dataset $S$ in $K$ parts or folds, denoted by $i = 1,\dots,K$. The algorithm computes the loss of the correspondent predictor on the test set $S_i$ and it is executed on each training part $S_{-i} = S \setminus S_{i}$. The estimate is calculated by splitting further the training data in two subsets, $S_{train}$ and $S_{dev}$. The development set $S_{dev}$ (also called validation set) is used as a surrogate test set. The algorithm is run on $S_{train}$ once for each value of the hyperparameter in $\Theta_0$. The resulting predictors are tested on the $S_{dev}$ set. In order to obtain the final predictor, the learning algorithm is run once more on the original training set $S_{-i}$ using the value of the $\theta$ corresponding to the predictor with smallest error on the validation set. In the end, the cross validation estimate is calculated by averaging the test errors of the predictors \cite{profcv}. \newline
+\label{sec:kfold}
+Cross-validation is a technique to provide a more accurate estimate of a model's performance and to prevent overfitting. This is done by testing an entire set of hyperparameters $\Theta_0 \subset \Theta$, where $\Theta$ is the set of all possible hyperparameter values. The nested CV is an extension of traditional Cross Validation and is particularly useful when you want to tune hyperparameters.
+The code partitions the entire dataset $S$ in $K$ parts or folds, denoted by $i = 1,\dots,K$. For every of them, the algorithm organizes the data into a test part $S_i$ and a training part $S_{-i} = S \setminus S_{i}$. Another Cross Validation step is run on $S_{-i}$: these data are subdivided into K parts, denoted by $j = 1,\dots,K$. For each value of the hyperparameter in $\Theta_0$ and $j$, it is calculated the estimate by splitting further the training data in two subsets, $S_{train} = S_{-i} \setminus S_{j}$ and $S_{dev} = S_{j}$. The development set $S_{dev}$ (also called validation set) is used as a surrogate test set. The outcome of this nested loop is the mean of the $K$ losses associated to the predictions made with a certain $\theta \in \Theta_0$. In order to obtain the final predictor for the $i^{th}$ fold, the learning algorithm is run once more on the original training set $S_{-i}$ using the value of the $\theta$ corresponding to the predictor with the smallest average error on the $k$ validation sets. In the end, the cross validation estimate is calculated by averaging the test errors of the predictors. The outputs are the average of the $K$ test errors and the hyperparameter which its associated MSE is the least \cite{profcv}. \newline
 
 \subsection{Implementation}
-The Nested CV method picks as input the list of the hyperparameters $alphas$, the $K$ number of folds and the dataset $S$. As mentioned above, the data are subdivided into a test set $S_{test}$ and a training set $S_{train} = S \setminus S_{test}$ for each iteration $i = 1, \dots, K$. In the nested part, we cut up $S_{train}$ in $CV_{train}$ and $CV_{dev}$ (validation set). Then, for each $alpha \in alphas$, we predict $\boldsymbol{w}$ through ridge regression \eqref{rr}. We take into account the $alpha$ that has generated the minor loss in the estimate. At the end of the external loop, a last prediction is made by taking up the entire training set and tested with $S_{test}$.
-Finally, after have examined all the folds, the average of the $K$ losses is calculated and returned by the method, together with the hyperparameter $alpha$ and the best predictor $\boldsymbol{w}$. 
+The Nested CV method picks as input the list of the hyperparameters $alphas$, the $K$ number of folds and the dataset $S$. As mentioned above, the data are subdivided into a test set $S_{test}$ and a training set $S_{train} = S \setminus S_{test}$ for each iteration $i = 1, \dots, K$. In the nested part, we cut up $S_{train}$ into $K$ folds, with $j = 1, \dots, K$: $CV_{train} = S_{train} \setminus S_j$ and $CV_{dev} = S_j$ (validation set). Then, for each $alpha \in alphas$ and $j$, we predict $\boldsymbol{w}_{ij}$ through ridge regression \eqref{rr}. We take into account the $alpha$ in the $i^{th}$ fold whose predictions have generated the minor average test error in the estimates. At the end of the nested loop, another prediction is made by taking up the entire training set $S_{train}$ and tested with $S_{test}$.
+Finally, after all the folds have been examined, the average of the $K$ losses is calculated and returned by the method, together with the hyperparameter $alpha$ and the best predictor $\boldsymbol{w}$. 
 %what is it
 %formule
 %pregi
 %implementazione
 %risultati
 \subsection{Results}
-The hyperparameter tuning provides an $\alpha$ equal to $53613$, with a resulting MSE \eqref{MSE} of $275.39$. The classifier \texttt{sklearn.linear\_model.RidgeCV} delivers a MSE value of $273.35$. As shown in figure \ref{rrmseall}, the choice of $\alpha$ does not significantly affect the rate of the MSE (9) until the order of magnitude of about $10^6$.
+The hyperparameter tuning provides an $\alpha$ equal to $40556$, with a resulting MSE \eqref{MSE} of $368.97$ (the number of datapoints used is $1000$). Using $\alpha$ achieved by Nested CV, the MSE is $292.09$ (with training set size $7500$ and test set size $2500$). The classifier \texttt{sklearn.linear\_model.RidgeCV} delivers a MSE value of $273.35$ using all datapoints. It takes less time since is not nested CV. As shown in figure \ref{rrmseall}, the choice of $\alpha$ does not significantly affect the rate of the MSE (9) until the order of magnitude of about $10^6$.
 %numerical vs all (also scikit-learn, in a objective way)
 %which MSE gives
 %plots
@@ -199,7 +200,7 @@ where $K$ is the $m \times m$ matrix with entries $\boldsymbol{K}_{i,j} = K(\bol
 \subsection{Implementation}
 \label{kernelimpl}
 In this project has been decided to deal with the Gaussian Kernel (9).
-For experimental purpose, we have tested two possible researches for the hyperparameter $\gamma$: the cross validation and the determination of the average norm on a number of datapoints. The last solution just cited has been carried out for the reason that if $\gamma$ is relatively small to the typical euclidean squared distances between training and test points, this will imply a training error equal or close to zero, with a resulting overfitting of the predictor. At the contrary, large $\gamma$ values with respect to the euclidean squared distances cause to the resulted predictors to underfit \cite{profk}. In order to respect so, we have analyzed whether or not the investigation of the average distance of the datapoints is meaningful.\newline
+For experimental purpose, we have tested two possible researches for the hyperparameter $\gamma$: the nested cross validation and the determination of the average norm on a number of datapoints. The last solution just cited has been carried out for the reason that if $\gamma$ is relatively small to the typical euclidean squared distances between training and test points, this will imply a training error equal or close to zero, with a resulting overfitting of the predictor. At the contrary, large $\gamma$ values with respect to the euclidean squared distances cause to the resulted predictors to underfit \cite{profk}. In order to respect so, we have analyzed whether or not the investigation of the average distance of the datapoints is meaningful.\newline
 
 \subsubsection{Kernel Functions}
 \label{subsubsec:kernelfunc}
@@ -241,9 +242,9 @@ The test made on the numerical features gives an MSE (9) of $392.38$, with a var
 The unique difference is that $\gamma$ is squared. In the test phase we have simply passed to the function the root squared average norm considered for the precedent tests.
 
 \subsection{Kernel Cross Validation}
-The hyperparameter tuning is now done on both $\gamma$ and $\alpha$. The procedure is almost the same: the only difference is that the prediction and the loss are made by the kernel functions (see section \ref{subsubsec:kernelfunc}). In order to estimate the two best hyperparameters, it has been implemented an outside loop from the nested cross validation that checks for each $\alpha$ its best $\gamma$ value. 
+The hyperparameter tuning is now done on both $\gamma$ and $\alpha$. The procedure is almost the same as the section \ref{sec:kfold}: the only difference is that the prediction and the loss are made by the kernel functions (see section \ref{subsubsec:kernelfunc}). In order to estimate the two best hyperparameters, it has been implemented an outside loop from the nested cross validation that checks for each $\alpha$ its best $\gamma$ value. 
 \subsubsection{Results}
-For this topic, the hyperpameters are chosen from a set of values generated at random. The cross validation process is built with a number of $1000$ samples, due to the huge amount of computation. 
+For this topic, the hyperpameters are chosen from a set of values generated at random. The cross validation process is built with a number of $500$ samples, due to the huge amount of computation. 
 \begin{figure}[H]
 	\begin{adjustwidth}{0 cm}{}
 		\begin{center}
@@ -267,18 +268,9 @@ Once we have selected the best $\alpha$ and $\gamma$ values, we re-train the mod
 
 \section{Conclusion}
 %numerical vs all
-The results show a sensible decrease when all the features have been considered in respect of examining only the numerical ones in the ridge regression fashion. In the figures \ref{rrmsenun} and \ref{rrmseall} it has been compared the MSE (9) considering a wide range of the hyperparameter $\alpha$, using two different ridge regression predictors. Both of them depict almost the same loss in the first $\alpha$'s orders of magnitude: in fact, when we deal with nested cross validation, the results are approximately equal, as illustrated in the figure \ref{CVscrsk}.   
+The results show a sensible decrease when all the features have been considered in respect of examining only the numerical ones in the ridge regression fashion. In the figures \ref{rrmsenun} and \ref{rrmseall} it has been compared the MSE (9) considering a wide range of the hyperparameter $\alpha$, using two different ridge regression predictors. Both of them depict almost the same loss in the first $\alpha$'s orders of magnitude.   
 
-    
-\begin{figure}[H]
-	\begin{adjustwidth}{0 cm}{}
-		\begin{center}
-			\includegraphics[scale= 0.53]{images/finalCV.png}
-		\end{center}
-	\end{adjustwidth}
-	\caption{The histogram shows the MSEs comparison between the ridge regression model developed from scratch and \texttt{scikit-learn} ridge regressor considering all dataset features and all the datapoints.}
-	\label{CVscrsk}
-\end{figure}
+
 %avg norm vs cv
 The resultant values illustrated by the kernel computations in the figure \ref{KRRcomparison} do not reflect neither a significant worsening nor an improvement in terms of loss compared to the standard linear ridge prediction. Thus, it should be identical choosing one of the two models in terms of yield. However, the ridge regression predictor takes less time to compute with respect to the kernel one. In addition, in the first one we consider all of the datapoints in the estimation, which is literally inconceivable for the kernel to process. One improvement of this work could be to take into account the kernel model considering the whole dataset, in order to verify whether or not this predictor might refine its estimations. 
 
